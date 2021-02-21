@@ -2,6 +2,7 @@ package com.rest.api.controller.v1.board;
 
 import com.rest.api.entity.board.Board;
 import com.rest.api.entity.board.Post;
+import com.rest.api.model.Dto.PostResponse;
 import com.rest.api.model.board.ParamsPost;
 import com.rest.api.model.response.CommonResult;
 import com.rest.api.model.response.ListResult;
@@ -45,7 +46,7 @@ public class BoardController {
 
     @ApiOperation(value = "게시글 리스트", notes = "게시글 리스트를 조회한다.")
     @GetMapping(value = "/{boardName}/posts")
-    public ListResult<Post> posts(@PathVariable String boardName) {
+    public ListResult<PostResponse> posts(@PathVariable String boardName) {
         return responseService.getListResult(boardService.findPosts(boardName));
     }
 
@@ -54,7 +55,7 @@ public class BoardController {
     })
     @ApiOperation(value = "게시글 작성", notes = "게시글을 작성한다.")
     @PostMapping(value = "/{boardName}/post")
-    public SingleResult<Post> post(@PathVariable String boardName, @Valid @ModelAttribute ParamsPost post) {
+    public SingleResult<PostResponse> post(@PathVariable String boardName, @Valid @RequestBody ParamsPost post) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String uid = authentication.getName();
         return responseService.getSingleResult(boardService.writePost(uid, boardName, post));
@@ -62,8 +63,9 @@ public class BoardController {
 
     @ApiOperation(value = "게시글 상세", notes = "게시글 상세정보를 조회한다.")
     @GetMapping(value = "/post/{postId}")
-    public SingleResult<Post> post(@PathVariable long postId) {
-        return responseService.getSingleResult(boardService.getPost(postId));
+    public SingleResult<PostResponse> post(@PathVariable long postId) {
+        Post post = boardService.getPost(postId);
+        return responseService.getSingleResult(new PostResponse(post));
     }
 
     @ApiImplicitParams({
@@ -71,9 +73,10 @@ public class BoardController {
     })
     @ApiOperation(value = "게시글 수정", notes = "게시판의 글을 수정한다.")
     @PutMapping(value = "/post/{postId}")
-    public SingleResult<Post> post(@PathVariable long postId, @Valid @ModelAttribute ParamsPost post) {
+    public SingleResult<PostResponse> post(@PathVariable long postId, @Valid @RequestBody ParamsPost post) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String uid = authentication.getName();
+
         return responseService.getSingleResult(boardService.updatePost(postId, uid, post));
     }
 

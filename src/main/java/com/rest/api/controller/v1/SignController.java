@@ -63,7 +63,7 @@ public class SignController {
     @PostMapping(value = "/signup")
     public CommonResult signup(@ApiParam(value = "회원ID : 이메일 / 비밀번호 / 이름 ", required = true) @RequestBody UserSignupRequest userSignupRequest){
 
-        if (userJpaRepo.findByUid(userSignupRequest.getName()) != null){
+        if (userJpaRepo.findByUid(userSignupRequest.getId()).isPresent()){
             throw new CUserExistException();
         }
 

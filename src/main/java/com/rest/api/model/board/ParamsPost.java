@@ -13,10 +13,6 @@ import javax.validation.constraints.Size;
 @NoArgsConstructor
 public class ParamsPost {
     @NotEmpty
-    @Size(min = 2, max = 50)
-    @ApiModelProperty(value = "작성자명", required = true)
-    private String author;
-    @NotEmpty
     @Size(min = 2, max = 100)
     @ApiModelProperty(value = "제목", required = true)
     private String title;
