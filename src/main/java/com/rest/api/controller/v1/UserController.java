@@ -5,6 +5,7 @@ import com.rest.api.entity.User;
 import com.rest.api.model.response.CommonResult;
 import com.rest.api.model.response.ListResult;
 import com.rest.api.model.response.SingleResult;
+import com.rest.api.model.Dto.UserResponse;
 import com.rest.api.repo.UserJpaRepo;
 import com.rest.api.service.ResponseService;
 import io.swagger.annotations.*;
@@ -12,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Api(tags = {"2. User"})
 @RequiredArgsConstructor
@@ -27,9 +31,13 @@ public class UserController {
     })
     @ApiOperation(value = "회원 리스트 조회", notes = "모든 회원을 조회한다")
     @GetMapping(value = "/users")
-    public ListResult<User> findAllUser() {
+    public ListResult<UserResponse> findAllUser() {
         // 결과데이터가 여러건인경우 getListResult를 이용해서 결과를 출력한다.
-        return responseService.getListResult(userJpaRepo.findAll());
+        List<User> users = userJpaRepo.findAll();
+        List<UserResponse> res = users.stream()
+                .map(u->new UserResponse(u.getName(), u.getUid()))
+                .collect(Collectors.toList());
+        return responseService.getListResult(res);
     }
 
     @ApiImplicitParams({
@@ -37,12 +45,13 @@ public class UserController {
     })
     @ApiOperation(value = "회원 단건 조회", notes = "회원번호(msrl)로 회원을 조회한다")
     @GetMapping(value = "/user")
-    public SingleResult<User> findUser() {
+    public SingleResult<UserResponse> findUser() {
         // SecurityContext에서 인증받은 회원의 정보를 얻어온다.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String id = authentication.getName();
         // 결과데이터가 단일건인경우 getSingleResult를 이용해서 결과를 출력한다.
-        return responseService.getSingleResult(userJpaRepo.findByUid(id).orElseThrow(CUserNotFoundException::new));
+        User user = userJpaRepo.findByUid(id).orElseThrow(CUserNotFoundException::new);
+        return responseService.getSingleResult(new UserResponse(user.getName(), user.getUid()));
     }
 
     @ApiImplicitParams({
@@ -50,14 +59,15 @@ public class UserController {
     })
     @ApiOperation(value = "회원 수정", notes = "회원정보를 수정한다")
     @PutMapping(value = "/user")
-    public SingleResult<User> modify(
+    public SingleResult<UserResponse> modify(
             @ApiParam(value = "회원이름", required = true) @RequestParam String name) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String id = authentication.getName();
         User user = userJpaRepo.findByUid(id).orElseThrow(CUserNotFoundException::new);
         user.setName(name);
-        return responseService.getSingleResult(userJpaRepo.save(user));
+        user = userJpaRepo.save(user);
+        return responseService.getSingleResult(new UserResponse(user.getName(), user.getUid()));
     }
 
     @ApiImplicitParams({

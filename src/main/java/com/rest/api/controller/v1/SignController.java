@@ -14,10 +14,13 @@ import com.rest.api.service.social.KakaoService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -35,11 +38,11 @@ public class SignController {
 
     @ApiOperation(value = "로그인", notes = "이메일 회원 로그인을 한다.")
     @PostMapping(value = "/signin")
-    public SingleResult<String> signin(@ApiParam(value = "회원ID : 이메일", required = true) @RequestParam String id,
-                                       @ApiParam(value = "비밀번호", required = true) @RequestParam String password) {
+    public SingleResult<String> signin(
+            @ApiParam(value="아이디(또는 이메일), 비밀번호", required=true) @RequestBody UserSigninRequest userSigninRequest) {
 
-        User user = userJpaRepo.findByUid(id).orElseThrow(CEmailSigninFailedException::new);
-        if (!passwordEncoder.matches(password, user.getPassword()))
+        User user = userJpaRepo.findByUid(userSigninRequest.getId()).orElseThrow(CEmailSigninFailedException::new);
+        if (!passwordEncoder.matches(userSigninRequest.getPassword(), user.getPassword()))
             throw new CEmailSigninFailedException();
 
         return responseService.getSingleResult(jwtTokenProvider.createToken(String.valueOf(user.getMsrl()), user.getRoles()));
@@ -58,16 +61,19 @@ public class SignController {
 
     @ApiOperation(value = "가입", notes = "회원가입을 한다.")
     @PostMapping(value = "/signup")
-    public CommonResult signup(@ApiParam(value = "회원ID : 이메일", required = true) @RequestParam String id,
-                               @ApiParam(value = "비밀번호", required = true) @RequestParam String password,
-                               @ApiParam(value = "이름", required = true) @RequestParam String name) {
+    public CommonResult signup(@ApiParam(value = "회원ID : 이메일 / 비밀번호 / 이름 ", required = true) @RequestBody UserSignupRequest userSignupRequest){
+
+        if (userJpaRepo.findByUid(userSignupRequest.getName()) != null){
+            throw new CUserExistException();
+        }
 
         userJpaRepo.save(User.builder()
-                .uid(id)
-                .password(passwordEncoder.encode(password))
-                .name(name)
+                .uid(userSignupRequest.getId())
+                .password(passwordEncoder.encode(userSignupRequest.getPassword()))
+                .name(userSignupRequest.getName())
                 .roles(Collections.singletonList("ROLE_USER"))
                 .build());
+
         return responseService.getSuccessResult();
     }
 
@@ -91,5 +97,21 @@ public class SignController {
 
         userJpaRepo.save(inUser);
         return responseService.getSuccessResult();
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    static class UserSigninRequest {
+
+        String id;
+        String password;
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    static class UserSignupRequest {
+        String id;
+        String password;
+        String name;
     }
 }
