@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 @EnableCaching
-@Configuration
+//@Configuration
 public class RedisConfig {
 
     @Bean(name = "cacheManager")
