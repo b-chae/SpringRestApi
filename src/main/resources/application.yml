@@ -14,3 +14,6 @@ spring:
         profile: https://kapi.kakao.com/v2/user/me
   jwt:
     secret: govlepel@$&
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
